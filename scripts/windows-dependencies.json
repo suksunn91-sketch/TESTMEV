@@ -1,0 +1,20 @@
+[
+  {
+    "filename": "python.3.12.10.nupkg",
+    "url": "https://api.nuget.org/v3-flatcontainer/python/3.12.10/python.3.12.10.nupkg",
+    "sha256": "0eb85c2dfccccf1b17352de4c397f69194035b7d37149eacc16f1147d93de3b8",
+    "kind": "python"
+  },
+  {
+    "filename": "metatrader5-5.0.5735-cp312-cp312-win_amd64.whl",
+    "url": "https://files.pythonhosted.org/packages/d9/db/42dc3437c7371492262b0642c64c7b5f67c396bbcb8101ccf182981b67b3/metatrader5-5.0.5735-cp312-cp312-win_amd64.whl",
+    "sha256": "f6e8584e48f2c3f5de818f17ee65f0f5adfa1e4af29cd5f4bf3f72b91ff06e10",
+    "kind": "wheel"
+  },
+  {
+    "filename": "numpy-1.26.4-cp312-cp312-win_amd64.whl",
+    "url": "https://files.pythonhosted.org/packages/16/2e/86f24451c2d530c88daf997cb8d6ac622c1d40d19f5a031ed68a4b73a374/numpy-1.26.4-cp312-cp312-win_amd64.whl",
+    "sha256": "08beddf13648eb95f8d867350f6a018a4be2e5ad54c8d8caed89ebca558b2818",
+    "kind": "wheel"
+  }
+]

@@ -1,0 +1,2 @@
+# The paper-trading desktop application uses only Python's standard library.
+# Python 3.11+ is required. No pip install is needed for demo mode.
