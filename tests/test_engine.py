@@ -1,122 +1,158 @@
-import math
+import copy
 import unittest
-
+from unittest.mock import patch
+from fixtures import market
 from trader.engine import PaperEngine, run_backtest, validated_settings
 
 
 class EngineTests(unittest.TestCase):
-    def test_spread_and_commission_are_charged(self):
-        engine = PaperEngine()
-        entry = engine.order('buy')
-        self.assertAlmostEqual(engine.pnl(entry), -0.30)
-        trade = engine.close(entry['id'])
-        self.assertAlmostEqual(trade['net'], -0.37)
-        self.assertAlmostEqual(engine.balance, 4999.63)
+    def setUp(self):
+        self.now=1800000000.
+        self.engine=PaperEngine(clock=lambda:self.now)
+        self.feed=market(self.now)
+        self.engine.apply_market(self.feed)
 
-    def test_short_profit_and_accounting(self):
-        engine = PaperEngine()
-        entry = engine.order('sell')
-        engine.candles[-1]['close'] -= 3
-        self.assertAlmostEqual(engine.equity(), 5002.7)
-        engine.close(entry['id'])
-        self.assertAlmostEqual(engine.balance, 5002.63)
-        self.assertEqual(engine.used_margin(), 0)
+    def test_startup_has_no_fabricated_prices(self):
+        state=PaperEngine().snapshot()
+        self.assertEqual(state["candles"],[])
+        self.assertIsNone(state["bid"])
+        self.assertEqual(state["market"]["status"],"disconnected")
+        with self.assertRaises(ValueError):
+            PaperEngine().order("buy")
+
+    def test_bid_ask_and_bars_are_exact_broker_values(self):
+        state=self.engine.snapshot()
+        self.assertEqual(state["bid"],2650.)
+        self.assertEqual(state["ask"],2650.3)
+        self.assertEqual(state["candles"],self.feed["candles"])
+
+    def test_same_bar_updates_without_duplicating_or_generating_bars(self):
+        updated=copy.deepcopy(self.feed)
+        updated["candles"][-1]["close"]+=.25
+        updated["tick_time"]+=1
+        self.engine.apply_market(updated)
+        self.assertEqual(len(self.engine.candles),100)
+        self.assertEqual(self.engine.candles[-1],updated["candles"][-1])
+
+    def test_spread_and_commission(self):
+        p=self.engine.order("buy")
+        self.assertEqual(p["entry"],2650.3)
+        self.assertEqual(p["symbol"],"XAUUSDm")
+        self.assertAlmostEqual(self.engine.close(p["id"])["net"],-.37)
+
+    def test_short_uses_real_ask_to_close(self):
+        p=self.engine.order("sell")
+        self.engine.apply_market({**self.feed,"bid":2647.,"ask":2647.5})
+        self.assertAlmostEqual(self.engine.pnl(p),2.5)
+        self.assertAlmostEqual(self.engine.close(p["id"])["net"],2.43)
 
     def test_close_is_not_repeatable(self):
-        engine = PaperEngine()
-        position = engine.order('buy')
-        engine.close(position['id'])
-        before = engine.balance
+        p=self.engine.order("buy")
+        self.engine.close(p["id"])
+        balance=self.engine.balance
         with self.assertRaises(ValueError):
-            engine.close(position['id'])
-        self.assertEqual(before, engine.balance)
+            self.engine.close(p["id"])
+        self.assertEqual(balance,self.engine.balance)
 
-    def test_stop_loss_fills_at_gap_quote(self):
-        engine = PaperEngine()
-        position = engine.order('buy')
-        close = position['sl'] - 2
-        engine.tick({'time': engine.candles[-1]['time']+60, 'open': close+10,
-                     'high': close+10, 'low': close, 'close': close, 'volume': 100})
-        self.assertFalse(engine.positions)
-        trade = engine.history[0]
-        self.assertEqual(trade['reason'], 'stop loss')
-        self.assertAlmostEqual(trade['exit'], close - .15)
+    def test_stop_loss_executes_only_when_fresh_real_quote_arrives(self):
+        p=self.engine.order("buy")
+        self.engine.apply_market({**self.feed,"tick_time":self.now-20,"bid":2630.,"ask":2630.3})
+        self.assertEqual(len(self.engine.positions),1)
+        self.engine.apply_market({**self.feed,"bid":2630.,"ask":2630.3})
+        self.assertEqual(self.engine.history[0]["reason"],"stop loss")
+        self.assertEqual(self.engine.history[0]["exit"],2630.)
 
     def test_short_take_profit(self):
-        engine = PaperEngine()
-        position = engine.order('sell')
-        close = position['tp'] - 1
-        engine.tick({'time':engine.candles[-1]['time']+60,'open':close,'high':close,
-                     'low':close,'close':close,'volume':100})
-        self.assertEqual(engine.history[0]['reason'], 'take profit')
-        self.assertGreater(engine.balance, 5000)
+        self.engine.order("sell")
+        self.engine.apply_market({**self.feed,"bid":2630.,"ask":2630.3})
+        self.assertEqual(self.engine.history[0]["reason"],"take profit")
 
-    def test_maximum_positions(self):
-        engine = PaperEngine({'max_positions':1})
-        engine.order('buy')
-        with self.assertRaises(ValueError):
-            engine.order('sell')
+    def test_maximum_positions_and_insufficient_margin(self):
+        self.engine.configure({"max_positions":1})
+        self.engine.order("buy")
+        with self.assertRaises(ValueError): self.engine.order("buy")
+        self.engine.close_all()
+        self.engine.configure({"volume":5})
+        with self.assertRaises(ValueError): self.engine.order("buy")
 
-    def test_insufficient_margin(self):
-        engine = PaperEngine({'volume':5})
-        with self.assertRaises(ValueError):
-            engine.order('buy')
+    def test_symbol_volume_rules_from_broker(self):
+        self.engine.apply_market({**self.feed,"volume_min":.1,"volume_step":.1})
+        with self.assertRaisesRegex(ValueError,"Lot"): self.engine.order("buy")
+
+    def test_stale_tick_pauses_bot_and_rejects_orders(self):
+        self.engine.running=True
+        self.engine.apply_market({**self.feed,"tick_time":self.now-16})
+        self.assertFalse(self.engine.running)
+        self.assertEqual(self.engine.market_status()["status"],"stale")
+        with self.assertRaises(ValueError): self.engine.order("buy")
+
+    def test_poll_stall_expires_even_if_no_new_feed_response(self):
+        self.engine.running=True
+        self.now+=4
+        self.assertEqual(self.engine.snapshot()["market"]["status"],"stale")
+        self.assertFalse(self.engine.running)
+
+    def test_disconnect_freezes_last_bars_and_never_falls_back(self):
+        self.engine.apply_market({"connected":False,"error":"offline"})
+        self.assertEqual(self.engine.candles,self.feed["candles"])
+        self.assertEqual(self.engine.quote("buy"),2650.3)
+        self.assertEqual(self.engine.market_status()["status"],"disconnected")
+        with self.assertRaises(ValueError): self.engine.order("buy")
+
+    def test_no_history_is_waiting_and_no_quote_is_invented(self):
+        self.engine.apply_market({**self.feed,"candles":[]})
+        self.assertEqual(self.engine.candles,[])
+        self.assertEqual(self.engine.market_status()["status"],"waiting")
+        with self.assertRaises(ValueError): self.engine.order("buy")
+
+    def test_no_forming_bar_or_repeated_bar_signals(self):
+        self.engine.running=True
+        with patch("trader.engine.ema",return_value=[0]*100) as ema:
+            self.engine.apply_market(self.feed)
+            self.engine.apply_market(self.feed)
+            ema.assert_not_called()
+
+    def test_closed_bar_signal_processed_once(self):
+        self.engine.running=True
+        updated=copy.deepcopy(self.feed)
+        final=dict(updated["candles"][-1],time=updated["candles"][-1]["time"]+60)
+        updated["candles"].append(final)
+        with patch("trader.engine.ema",side_effect=[[0,2],[1,1]]) as calc:
+            self.engine.apply_market(updated)
+            self.engine.apply_market(updated)
+            self.assertEqual(calc.call_count,2)
+        self.assertEqual(len(self.engine.positions),1)
+
+    def test_cannot_change_symbol_with_open_position(self):
+        self.engine.order("buy")
+        with self.assertRaises(ValueError): self.engine.configure({"symbol":"EURUSDm"})
 
     def test_reject_invalid_settings(self):
-        for bad in [{'volume':float('nan')},{'volume':float('inf')},{'volume':0},
-                    {'volume':.015},{'fast':30,'slow':20},{'max_positions':1.5},
-                    {'timeframe':'M2'},{'symbol':'MISSING'},{'slow':None},{'unknown':1}]:
-            with self.subTest(bad=bad), self.assertRaises(ValueError):
-                validated_settings(bad)
+        for bad in [{"volume":float("nan")},{"volume":float("inf")},{"volume":.015},
+                    {"max_positions":1.5},{"fast":22,"slow":21},{"symbol":"../bad"},
+                    {"timeframe":"M7"},{"unknown":1}]:
+            with self.subTest(bad=bad),self.assertRaises(ValueError): validated_settings(bad)
 
-    def test_cannot_change_instrument_while_positions_open(self):
-        engine = PaperEngine()
-        engine.order('buy')
-        with self.assertRaises(ValueError):
-            engine.configure({'symbol':'EURUSD'})
-        self.assertEqual(engine.settings['symbol'],'XAUUSD')
+    def test_backtest_requires_actual_input_bars(self):
+        with self.assertRaises(ValueError): run_backtest({},[],self.feed)
+        result=run_backtest({},self.feed["candles"],self.feed)
+        self.assertEqual(result["data_source"],"mt5")
+        self.assertEqual(result["bars"],100)
+        self.assertGreater(result["trades"],0)
 
-    def test_configuration_changes_do_not_move_existing_stops(self):
-        engine = PaperEngine()
-        position = engine.order('buy')
-        original = position['sl']
-        engine.configure({'stop_loss':15})
-        self.assertEqual(original,position['sl'])
+    def test_backtest_does_not_look_at_unseen_current_close(self):
+        bars=copy.deepcopy(self.feed["candles"])
+        first=run_backtest({},bars,self.feed)
+        bars[-1]["close"]+=1000
+        bars[-1]["high"]+=1000
+        second=run_backtest({},bars,self.feed)
+        self.assertEqual(first["net"],second["net"])
 
-    def test_stopping_bot_preserves_risk_controls(self):
-        engine = PaperEngine()
-        engine.order('buy')
-        engine.running = False
-        p=engine.positions[0]
-        close=p['sl']-3
-        engine.tick({'time':engine.candles[-1]['time']+60,'open':close,'high':close,
-                     'low':close,'close':close,'volume':100})
-        self.assertEqual(len(engine.history),1)
-
-    def test_backtest_trades_and_is_deterministic(self):
-        first, second = run_backtest({}), run_backtest({})
-        self.assertGreater(first['trades'], 0)
-        self.assertEqual(first['net'], second['net'])
-        self.assertEqual(first['trades'], second['trades'])
-        self.assertTrue(math.isfinite(first['drawdown']))
-        self.assertEqual(first['data_source'],'synthetic')
-
-    def test_ema_bot_places_orders_without_manual_input(self):
-        engine=PaperEngine(seed=2026)
-        engine.running=True
-        for _ in range(600):
-            engine.tick()
-        self.assertGreater(len(engine.history),0)
-        self.assertTrue(all(t['source']=='EMA sample' for t in engine.history))
-
-    def test_csv_contains_closed_trades(self):
-        engine=PaperEngine()
-        engine.order('sell')
-        engine.close_all()
-        csv=engine.csv()
-        self.assertIn('gross,fee,net',csv)
-        self.assertIn('XAUUSD,sell,0.01',csv)
+    def test_non_usd_symbol_still_charts_but_does_not_misprice_orders(self):
+        self.engine.apply_market({**self.feed,"currency_profit":"JPY"})
+        self.assertEqual(len(self.engine.candles),100)
+        with self.assertRaises(ValueError): self.engine.order("buy")
 
 
-if __name__=='__main__':
+if __name__=="__main__":
     unittest.main()

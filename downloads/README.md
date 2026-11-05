@@ -1,4 +1,4 @@
-# ดาวน์โหลด TESTMEV
+# ดาวน์โหลด TESTMEV 1.1.0 — กราฟสด MT5
 
 - [Windows EXE พร้อม Python และ MT5 runtime](https://github.com/suksunn91-sketch/TESTMEV/raw/refs/heads/codex/testmev-desktop/downloads/TESTMEV-Windows-x64.zip)
 - [ซอร์ส Python สำหรับ VS Code](https://github.com/suksunn91-sketch/TESTMEV/raw/refs/heads/codex/testmev-desktop/downloads/TESTMEV-Source.zip)
@@ -7,8 +7,8 @@
 
 ถ้าลิงก์ตรงไม่เปิด ให้เปิดไฟล์ ZIP ในโฟลเดอร์นี้บน GitHub แล้วกด **Download raw file** หาก repository เป็น private ให้ล็อกอินบัญชี GitHub ที่เข้าถึง repository ได้ก่อน
 
-เวอร์ชันนี้ซื้อขายในบัญชีจำลอง การเชื่อม Exness MT5 ใช้อ่านราคาและข้อมูลบัญชีเท่านั้น ยังไม่ส่งคำสั่งซื้อขายไปโบรกเกอร์
+เปิด Exness MT5 และล็อกอินก่อน แล้วกดเชื่อมใน TESTMEV กราฟหลักใช้ราคาและแท่งเทียนจริงทุก 0.5 วินาที ไม่มีราคาสุ่ม เมื่อข้อมูลค้างจะแจ้งเตือนและพักบอท บัญชีและออเดอร์ยังเป็น paper trading ไม่ส่งคำสั่งไปโบรกเกอร์
 
-ผ่านการทดสอบ Python 27 รายการ, browser UI และ EXE ผ่าน Wine 10 ยังไม่ได้ทดสอบบัญชี Exness ของผู้ใช้
+ตรวจการรับข้อมูลด้วย terminal fixtures, API และ browser UI ส่วนการเชื่อม Exness จริงต้องใช้ MT5 ที่ล็อกอินบน Windows ของผู้ใช้
 
 ดูขั้นตอนใช้งานเพิ่มเติมที่ [README หลัก](../README.md)

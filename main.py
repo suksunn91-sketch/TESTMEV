@@ -30,24 +30,22 @@ def main():
     args = parser.parse_args()
     if args.smoke_test:
         import json
-        from trader.engine import PaperEngine, run_backtest
+        from trader.engine import PaperEngine
         engine = PaperEngine()
-        engine.order("buy")
-        engine.tick()
-        engine.close_all()
-        result = run_backtest(engine.settings)
-        assert engine.snapshot()["trade_count"] == 1 and result["trades"] > 0
+        assert engine.snapshot()["candles"] == []
+        assert engine.snapshot()["bid"] is None
         assert (Path(__file__).parent / "trader" / "static" / "app.js").exists()
         if sys.platform == "win32":
             import MetaTrader5
             import numpy
-        print(json.dumps({"ok": True, "python": sys.version.split()[0], "backtest_trades": result["trades"]}))
+        print(json.dumps({"ok": True, "python": sys.version.split()[0], "version": "1.1.0",
+                          "market_source": "MT5 required; no generated prices"}))
         return
     app = Application()
     server = create_server(app, args.port)
     url = f"http://127.0.0.1:{server.server_port}"
     print(f"TESTMEV: {url}\nPaper trading only. MT5 connection is read-only.\nUse the Exit button to close the application.", flush=True)
-    workers = [threading.Thread(target=app.run_ticks, daemon=True), threading.Thread(target=app.poll_mt5, daemon=True)]
+    workers = [threading.Thread(target=app.poll_mt5, daemon=True)]
     for worker in workers:
         worker.start()
     if not args.no_browser:
@@ -61,9 +59,8 @@ def main():
         for worker in workers:
             worker.join(timeout=12)
         with app.lock:
-            # Stop the simulator and settle positions before archiving this session.
+            # Preserve unsettled positions; never invent an exit quote on shutdown.
             app.engine.running = False
-            app.engine.close_all()
             app.archive_session()
         with app.mt5_lock:
             app.bridge.disconnect()

@@ -72,12 +72,12 @@ def main():
     subprocess.run([args.compiler, '-Os', '-s', '-municode', '-mwindows', '-static',
                     str(ROOT / 'scripts' / 'windows_launcher.c'), '-o', str(target / 'TESTMEV.exe')], check=True)
     (target / 'START-HERE.txt').write_text(
-        'TESTMEV - Windows 10/11 x64\n\n'
+        'TESTMEV 1.1.0 - Windows 10/11 x64\n\n'
         '1. Extract ALL files from this ZIP into a folder.\n'
         '2. Double-click TESTMEV.exe. Python is included.\n'
-        '3. Paper trading works immediately without an account or Internet.\n'
-        '4. To READ Exness prices/account: open Exness MT5, log in there,\n'
-        '   then use the MT5 connection button in TESTMEV.\n\n'
+        '3. Open Exness MT5 and log in. Connect MT5 in the app to see live prices.\n'
+        '4. Charts only use real MT5 data. No connection means no prices.\n'
+        '   Trades remain PAPER only; there is no generated-price fallback.\n\n'
         'This version does NOT send orders to Exness / MT5.\n'
         'Keep app/ and runtime/ next to TESTMEV.exe.\n'
         'Use Exit in the sidebar to stop the background application.\n'
