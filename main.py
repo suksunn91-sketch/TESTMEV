@@ -38,7 +38,7 @@ def main():
         if sys.platform == "win32":
             import MetaTrader5
             import numpy
-        print(json.dumps({"ok": True, "python": sys.version.split()[0], "version": "1.1.0",
+        print(json.dumps({"ok": True, "python": sys.version.split()[0], "version": "1.2.0",
                           "market_source": "MT5 required; no generated prices"}))
         return
     app = Application()

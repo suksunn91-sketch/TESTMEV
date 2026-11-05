@@ -1,4 +1,4 @@
-# ดาวน์โหลด TESTMEV 1.1.0 — กราฟสด MT5
+# ดาวน์โหลด TESTMEV 1.2.0 — TradingView ก่อนเชื่อม MT5
 
 - [Windows EXE พร้อม Python และ MT5 runtime](https://github.com/suksunn91-sketch/TESTMEV/raw/refs/heads/codex/testmev-desktop/downloads/TESTMEV-Windows-x64.zip)
 - [ซอร์ส Python สำหรับ VS Code](https://github.com/suksunn91-sketch/TESTMEV/raw/refs/heads/codex/testmev-desktop/downloads/TESTMEV-Source.zip)
@@ -12,3 +12,5 @@
 ตรวจการรับข้อมูลด้วย terminal fixtures, API และ browser UI ส่วนการเชื่อม Exness จริงต้องใช้ MT5 ที่ล็อกอินบน Windows ของผู้ใช้
 
 ดูขั้นตอนใช้งานเพิ่มเติมที่ [README หลัก](../README.md)
+
+รุ่น 1.2.0 เปิด TradingView EIGHTCAP:XAUUSD เป็นหน้าแรก กดเปิดกราฟเดิมเพื่อใช้ Paper Trading และ Strategy Tester ในเว็บ TradingView ได้โดยไม่เชื่อม MT5 ดาวน์โหลด EMA ตัวอย่างได้จาก [ไฟล์ Pine](TESTMEV-EMA-Starter.pine) ผล TradingView ไม่ซิงก์เข้าบัญชี paper ในแอป

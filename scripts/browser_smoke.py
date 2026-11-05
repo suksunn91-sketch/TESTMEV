@@ -34,9 +34,18 @@ with tempfile.TemporaryDirectory() as directory, patch("trader.mt5_bridge.platfo
         with sync_playwright() as p:
             browser=p.chromium.launch(executable_path=os.getenv("CHROMIUM_PATH"),headless=True,args=["--no-sandbox"])
             page=browser.new_page(viewport={"width":1440,"height":1040},device_scale_factor=1)
+            page.route('https://s.tradingview.com/**',lambda route:route.fulfill(status=200,content_type='text/html',body='<p>TradingView iframe test fixture — remote service not validated</p>'))
             errors=[]
             page.on("pageerror",lambda e:errors.append(str(e)))
             page.goto(f"http://127.0.0.1:{server.server_port}")
+            expect(page.locator('#tradingview-view')).to_be_visible()
+            expect(page.locator('#paper-stats')).not_to_be_visible()
+            expect(page.locator('#tradingview-view iframe')).to_have_attribute('src', __import__('re').compile('.*EIGHTCAP%3AXAUUSD.*'))
+            expect(page.locator('.tv-actions a').first).to_have_attribute('href','https://th.tradingview.com/chart/79Ao0M4l/?symbol=EIGHTCAP%3AXAUUSD')
+            with page.expect_download() as pine_download:
+                page.locator('.tv-actions a').nth(1).click()
+            assert '//@version=6' in pine_download.value.path().read_text()
+            page.locator('[data-view=trade]').click()
             expect(page.locator("#feed-overlay")).to_be_visible()
             expect(page.locator("#buy-button")).to_be_disabled()
             expect(page.locator("#bid-price")).to_have_text("—")

@@ -49,6 +49,15 @@ class ServerTests(unittest.TestCase):
         status,body,_=self.request('/api/state')
         self.assertEqual(json.loads(body)['mode'],'paper')
 
+    def test_tradingview_guide_and_strategy_download(self):
+        _,body,headers=self.request('/')
+        self.assertIn('EIGHTCAP%3AXAUUSD',body.decode())
+        self.assertIn('frame-src https://s.tradingview.com',headers['Content-Security-Policy'])
+        _,pine,headers=self.request('/strategy.pine')
+        self.assertIn('//@version=6',pine.decode())
+        self.assertIn('strategy.exit',pine.decode())
+        self.assertIn('attachment',headers['Content-Disposition'])
+
     def test_csrf_token_required(self):
         with self.assertRaises(HTTPError) as caught:
             self.request('/api/order',{'side':'buy'},{'X-App-Token':'wrong'})

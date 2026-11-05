@@ -12,7 +12,8 @@
     <a class="brand" href="/" aria-label="TESTMEV home"><img src="/icon.svg" alt=""><span>TESTMEV<small>YOUR TRADING WORKSPACE</small></span></a>
     <div class="workspace-label">WORKSPACE <span>01</span></div>
     <nav aria-label="เมนูหลัก">
-      <button class="nav-item active" data-view="trade"><span class="nav-icon">▥</span>เทรด & บอท<span class="nav-short">01</span></button>
+      <button class="nav-item active" data-view="tradingview"><span class="nav-icon">↗</span>TradingView<span class="nav-short">TV</span></button>
+      <button class="nav-item" data-view="trade"><span class="nav-icon">▥</span>เทรด & บอท<span class="nav-short">01</span></button>
       <button class="nav-item" data-view="backtest"><span class="nav-icon">◷</span>ทดสอบย้อนหลัง<span class="nav-short">02</span></button>
       <button class="nav-item" id="nav-history"><span class="nav-icon">≡</span>ประวัติรายการ<span class="nav-short">03</span></button>
     </nav>
@@ -24,20 +25,31 @@
       <div class="bot-card"><div class="bot-card-title"><span class="bot-icon">⌘</span><span>EMA Starter<small>กลยุทธ์ตัวอย่าง</small></span><span class="status-dot" id="bot-dot"></span></div>
       <div class="bot-card-meta"><span id="bot-symbol">XAUUSD · M1</span><span id="bot-status">หยุดอยู่</span></div></div>
     </div>
-    <div class="sidebar-bottom"><div class="paper-account"><span class="avatar">P</span><span>Paper account<small>บัญชีจำลอง · USD</small></span><span class="badge mini">DEMO</span></div><button id="help-button" class="text-button">ⓘ วิธีใช้งาน</button><button id="exit-button" class="text-button">⏻ ออกจากโปรแกรม</button><div class="version">TESTMEV DESKTOP <span>v1.1.0</span></div></div>
+    <div class="sidebar-bottom"><div class="paper-account"><span class="avatar">P</span><span>Paper account<small>บัญชีจำลอง · USD</small></span><span class="badge mini">DEMO</span></div><button id="help-button" class="text-button">ⓘ วิธีใช้งาน</button><button id="exit-button" class="text-button">⏻ ออกจากโปรแกรม</button><div class="version">TESTMEV DESKTOP <span>v1.2.0</span></div></div>
   </aside>
   <main>
     <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="page-label">เทรด & บอท</strong></div><div class="topbar-right"><span class="local-status"><i></i><span id="server-status">ระบบพร้อมใช้งาน</span></span><span class="top-divider"></span><time id="clock">--:--:--</time></div></header>
     <div class="content">
       <section class="page-heading"><div><div class="eyebrow">TRADE WITH CLARITY</div><h1 id="page-title">พื้นที่เทรดของคุณ<span>.</span></h1><p id="page-subtitle">ดูตลาด จัดการออเดอร์ และทดลองบอทในที่เดียว</p></div><div class="heading-actions"><span class="badge" id="feed-badge"><i></i> MT5 · รอเชื่อมต่อ</span><button class="button secondary" id="settings-button">⚙ ตั้งค่าบอท</button></div></section>
-      <div class="notice"><span>◈</span><p><strong>กราฟจริงจาก Exness MT5</strong> ราคาและแท่งเทียนจากโบรกเกอร์ · บัญชีและออเดอร์เป็น paper trading</p><button id="notice-help">ดูรายละเอียด ↗</button></div>
-      <section class="stats" aria-label="สรุปบัญชีจำลอง">
+      <div class="notice" id="mt5-notice" hidden><span>◈</span><p><strong>กราฟจริงจาก Exness MT5</strong> ราคาและแท่งเทียนจากโบรกเกอร์ · บัญชีและออเดอร์เป็น paper trading</p><button id="notice-help">ดูรายละเอียด ↗</button></div>
+      <section class="stats" id="paper-stats" hidden aria-label="สรุปบัญชีจำลอง">
         <article class="stat"><div class="stat-label">ยอดคงเหลือ <span>USD</span></div><div class="stat-value" id="balance">5,000<span>.00</span></div><div class="stat-caption">Balance <span>บัญชีจำลอง</span></div></article>
         <article class="stat"><div class="stat-label">มูลค่าพอร์ต <span>USD</span></div><div class="stat-value" id="equity">5,000<span>.00</span></div><div class="stat-caption">Equity <span id="equity-change">0.00%</span></div></article>
         <article class="stat"><div class="stat-label">กำไร / ขาดทุนที่เปิดอยู่ <span>USD</span></div><div class="stat-value positive" id="unrealized">+0<span>.00</span></div><div class="stat-caption">Unrealized P/L <span id="open-count">0 ออเดอร์</span></div></article>
         <article class="stat"><div class="stat-label">ผลลัพธ์ที่ปิดแล้ว <span>USD</span></div><div class="stat-value" id="net">0<span>.00</span></div><div class="stat-caption">Realized P/L <span id="win-rate">ยังไม่มีรายการ</span></div></article>
       </section>
-      <section id="trade-view">
+      <section id="tradingview-view">
+        <div class="notice"><span>↗</span><p><strong>EIGHTCAP:XAUUSD · TradingView</strong> ดูกราฟโดยไม่เชื่อม MT5 · Paper Trading และ Strategy Tester ใช้ในเว็บ TradingView</p></div>
+        <div class="tv-actions"><a class="button primary" href="https://th.tradingview.com/chart/79Ao0M4l/?symbol=EIGHTCAP%3AXAUUSD" target="_blank" rel="noopener noreferrer">เปิดกราฟของคุณ · Paper / Backtest ↗</a><a class="button secondary" href="/strategy.pine" download="TESTMEV-EMA-Starter.pine">↓ ดาวน์โหลดกลยุทธ์ EMA</a></div>
+        <section class="panel tv-chart"><iframe title="กราฟ TradingView EIGHTCAP:XAUUSD สำหรับดูราคา" src="https://s.tradingview.com/widgetembed/?symbol=EIGHTCAP%3AXAUUSD&amp;interval=1&amp;theme=dark&amp;style=1&amp;locale=th&amp;timezone=Asia%2FBangkok&amp;allow_symbol_change=1&amp;hide_side_toolbar=0" referrerpolicy="no-referrer" allowfullscreen></iframe></section>
+        <p class="tv-caption">กราฟฝังสำหรับดูราคา ความพร้อมและความล่าช้าของข้อมูลขึ้นกับ TradingView หากไม่แสดงให้เปิดลิงก์กราฟด้านบน · เลย์เอาต์และบัญชีของคุณใช้ในเว็บ TradingView</p>
+        <section class="panel tv-guide"><h2>เริ่ม Paper และ Backtest โดยไม่เชื่อมโบรกเกอร์</h2><div class="tv-guide-grid">
+          <article><span class="eyebrow">01 · PAPER TRADING</span><h3>ลองซื้อขายใน TradingView</h3><p>เปิดกราฟด้านบน แล้วล็อกอิน TradingView เลือก Trading Panel → Paper Trading → Connect เพื่อใช้เงินจำลอง ไม่ต้องเชื่อมบัญชี Exness</p></article>
+          <article><span class="eyebrow">02 · STRATEGY TESTER</span><h3>ทดสอบ EMA ตัวอย่าง</h3><p>ดาวน์โหลดไฟล์กลยุทธ์ เปิดด้วย VS Code หรือ Notepad แล้วคัดลอกทั้งหมดไป Pine Editor ใน TradingView กด Add to chart และดู Strategy Tester / Strategy Report</p></article>
+          <article><span class="eyebrow">03 · เปรียบเทียบผล</span><h3>ดูผลในบัญชี TradingView</h3><p>Paper Trading เป็นการฝึกส่งคำสั่งด้วยตัวเอง ส่วน Pine strategy จำลองการซื้อขายย้อนหลัง ออเดอร์และผลไม่ซิงก์เข้าบัญชี paper ของ TESTMEV และไม่ส่งไปโบรกเกอร์</p></article>
+        </div><p class="tv-caption">ไฟล์ EMA เป็นตัวอย่างสำหรับเริ่มทดสอบ ปรับค่าธรรมเนียม ขนาดสัญญา และช่วงวันที่ให้ตรงกับข้อมูลที่ใช้ ฟีเจอร์และประวัติที่เข้าถึงได้ขึ้นกับแผน TradingView</p></section>
+      </section>
+      <section id="trade-view" hidden>
         <div class="trading-grid">
           <section class="panel chart-panel"><header class="panel-header"><div class="symbol-heading"><span class="gold-icon">Au</span><div><strong id="chart-symbol">XAUUSD</strong><small id="chart-description">รอราคาจาก MT5</small></div></div><div class="chart-toolbar"><button id="change-symbol" class="button quiet">เปลี่ยนสินทรัพย์</button><div class="segmented" id="timeframes"><button class="selected" data-frame="M1">1m</button><button data-frame="M5">5m</button><button data-frame="M15">15m</button></div><button id="expand-chart" class="icon-button" title="ขยายกราฟ" aria-label="ขยายกราฟ">⛶</button></div></header>
           <div class="chart-info"><span id="ohlc">กำลังโหลดกราฟ…</span><span class="chart-legend"><i class="legend-fast"></i>EMA <b id="fast-label">9</b><i class="legend-slow"></i>EMA <b id="slow-label">21</b></span></div>

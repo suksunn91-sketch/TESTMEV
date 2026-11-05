@@ -1,0 +1,40 @@
+//@version=6
+// TESTMEV EMA Starter: example strategy for TradingView's Strategy Tester.
+// Paper Trading account orders are separate from this strategy simulation.
+strategy("TESTMEV EMA Starter", overlay=true, initial_capital=5000, currency=currency.USD, default_qty_type=strategy.fixed, default_qty_value=1, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=0.035, slippage=1, margin_long=100, margin_short=100, process_orders_on_close=false, calc_on_every_tick=false)
+
+fastLength = input.int(9, "Fast EMA", minval=2, maxval=100)
+slowLength = input.int(21, "Slow EMA", minval=3, maxval=200)
+slDistance = input.float(8.0, "Stop loss: price distance (not cash risk)", minval=0.01)
+tpDistance = input.float(12.0, "Take profit: price distance", minval=0.01)
+startTime = input.time(timestamp("01 Jan 2020 00:00 +0000"), "Start date")
+endTime = input.time(timestamp("01 Jan 2035 00:00 +0000"), "End date")
+
+if fastLength >= slowLength
+    runtime.error("Fast EMA must be less than Slow EMA.")
+if startTime >= endTime
+    runtime.error("Start date must precede End date.")
+
+fast = ta.ema(close, fastLength)
+slow = ta.ema(close, slowLength)
+longSignal = ta.crossover(fast, slow)
+shortSignal = ta.crossunder(fast, slow)
+inRange = time >= startTime and time < endTime
+ready = not na(close[slowLength])
+slTicks = math.max(1, math.round(slDistance / syminfo.mintick))
+tpTicks = math.max(1, math.round(tpDistance / syminfo.mintick))
+
+if barstate.isconfirmed and ready and inRange
+    if longSignal
+        strategy.entry("Long", strategy.long)
+    if shortSignal
+        strategy.entry("Short", strategy.short)
+
+// Relative tick exits attach to the entry fill, including next-bar-open fills.
+strategy.exit("Long SL/TP", from_entry="Long", loss=slTicks, profit=tpTicks)
+strategy.exit("Short SL/TP", from_entry="Short", loss=slTicks, profit=tpTicks)
+if barstate.isconfirmed and time >= endTime
+    strategy.close_all(comment="End of test")
+
+plot(fast, "Fast EMA", color=color.orange, linewidth=2)
+plot(slow, "Slow EMA", color=color.blue, linewidth=2)

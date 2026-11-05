@@ -71,7 +71,7 @@ class Application:
     def state(self):
         with self.lock:
             return {**self.engine.snapshot(), "mt5": self.mt5_state, "error": self.last_error,
-                    "version": "1.1.0"}
+                    "version": "1.2.0"}
 
     def publish_market(self, result):
         # Caller holds mt5_lock, so a completed poll cannot overwrite a later disconnect/settings change.
@@ -174,12 +174,7 @@ class Application:
                 self.publish_market(self.bridge.unavailable("อ่านข้อมูล MT5 ไม่สำเร็จ กรุณาตรวจการเชื่อมต่อ"))
 
     def poll_mt5(self):
-        if self.saved_connection:
-            try:
-                self.action("connect", self.saved_connection)
-            except Exception as exc:
-                with self.lock:
-                    self.engine.log(str(exc))
+        # TradingView is the default workspace; MT5 connects only on user action.
         while not self.stop_event.wait(.5):
             self.poll_once()
 
@@ -198,7 +193,7 @@ def create_server(app, port=0):
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("Referrer-Policy", "no-referrer")
-            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src https://s.tradingview.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
             if disposition:
                 self.send_header("Content-Disposition", disposition)
             self.end_headers()
@@ -226,9 +221,12 @@ def create_server(app, port=0):
                 return
             route = urlsplit(self.path).path
             if route == "/api/bootstrap":
-                self.json(200, {"token": app.token, "version": "1.1.0"})
+                self.json(200, {"token": app.token, "version": "1.2.0"})
             elif route == "/api/state":
                 self.json(200, app.state())
+            elif route == "/strategy.pine":
+                self.send(200, (STATIC / "ema_starter.pine").read_bytes(), "text/plain; charset=utf-8",
+                          'attachment; filename="TESTMEV-EMA-Starter.pine"')
             elif route == "/api/export":
                 with app.lock:
                     csv_text = app.engine.csv()

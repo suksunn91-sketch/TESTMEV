@@ -72,12 +72,12 @@ def main():
     subprocess.run([args.compiler, '-Os', '-s', '-municode', '-mwindows', '-static',
                     str(ROOT / 'scripts' / 'windows_launcher.c'), '-o', str(target / 'TESTMEV.exe')], check=True)
     (target / 'START-HERE.txt').write_text(
-        'TESTMEV 1.1.0 - Windows 10/11 x64\n\n'
+        'TESTMEV 1.2.0 - Windows 10/11 x64\n\n'
         '1. Extract ALL files from this ZIP into a folder.\n'
         '2. Double-click TESTMEV.exe. Python is included.\n'
-        '3. Open Exness MT5 and log in. Connect MT5 in the app to see live prices.\n'
-        '4. Charts only use real MT5 data. No connection means no prices.\n'
-        '   Trades remain PAPER only; there is no generated-price fallback.\n\n'
+        '3. Start with TradingView EIGHTCAP:XAUUSD. No MT5 connection needed.\n'
+        '4. Open your TradingView chart to use Paper Trading and Strategy Tester.\n'
+        '   Download the sample Pine strategy from the app. MT5 mode is optional.\n\n'
         'This version does NOT send orders to Exness / MT5.\n'
         'Keep app/ and runtime/ next to TESTMEV.exe.\n'
         'Use Exit in the sidebar to stop the background application.\n'

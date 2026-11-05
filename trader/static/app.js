@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money = (n, signed=false) => (signed && n >= 0 ? '+' : '') + Number(n).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
 const price = (n, digits=2) => n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits});
-let state, token, tab='positions', view='trade', toastTimer, inFlight=false, stopped=false, connected=true, backtestResult=null;
+let state, token, tab='positions', view='tradingview', toastTimer, inFlight=false, stopped=false, connected=true, backtestResult=null;
 const changed = new WeakMap();
 function htmlIfChanged(element, html) {if(changed.get(element)!==html){element.innerHTML=html;changed.set(element,html);}}
 function toast(message, error=false) {clearTimeout(toastTimer);$('toast').textContent=message;$('toast').classList.toggle('error',error);$('toast').hidden=false;toastTimer=setTimeout(()=>{$('toast').hidden=true;},4500);}
@@ -18,7 +18,17 @@ async function api(action, data={}) {
 async function command(action,data={},message) {try{const result=await api(action,data);if(message)toast(message);return result;}catch(error){toast(error.message,true);return null;}}
 function metric(id,value,signed=false){const parts=money(value,signed).split('.');htmlIfChanged($(id),esc(parts[0])+'<span>.'+parts[1]+'</span>');if(id==='unrealized'||id==='net'){$(id).classList.toggle('positive',value>=0);$(id).classList.toggle('negative',value<0);}}
 function setTab(name){tab=name;document.querySelectorAll('[data-tab]').forEach(el=>{const active=el.dataset.tab===name;el.classList.toggle('active',active);el.setAttribute('aria-selected',String(active));});['positions','history','equity','logs'].forEach(t=>{$(t+'-panel').hidden=t!==name;});if(state)render();}
-function setView(name){view=name;$('trade-view').hidden=name!=='trade';$('backtest-view').hidden=name!=='backtest';document.querySelectorAll('[data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===name));$('page-label').textContent=name==='trade'?'เทรด & บอท':'ทดสอบย้อนหลัง';$('page-title').innerHTML=name==='trade'?'พื้นที่เทรดของคุณ<span>.</span>':'ห้องทดลองกลยุทธ์<span>.</span>';$('page-subtitle').textContent=name==='trade'?'ดูตลาด จัดการออเดอร์ และทดลองบอทในที่เดียว':'ทดสอบกับข้อมูลแท่งปิดจริงที่โหลดจาก MT5';redraw();}
+function setView(name){
+  view=name;
+  for(const item of ['tradingview','trade','backtest'])$(item+'-view').hidden=item!==name;
+  const tv=name==='tradingview';
+  document.body.classList.toggle('tv-mode',tv);
+  $('paper-stats').hidden=tv;$('mt5-notice').hidden=tv;
+  document.querySelectorAll('[data-view]').forEach(el=>el.classList.toggle('active',el.dataset.view===name));
+  const titles={tradingview:['TradingView','กราฟทองของคุณ','EIGHTCAP:XAUUSD · ใช้ Paper และ Backtest ใน TradingView โดยไม่เชื่อม MT5'],trade:['เทรด & บอท','พื้นที่เทรดของคุณ','ราคาจาก MT5 · บัญชี paper ภายในแอป'],backtest:['ทดสอบย้อนหลัง','ห้องทดลองกลยุทธ์','ทดสอบกับข้อมูลแท่งปิดจริงที่โหลดจาก MT5']};
+  $('page-label').textContent=titles[name][0];$('page-title').textContent=titles[name][1];$('page-subtitle').textContent=titles[name][2];
+  redraw();
+}
 function render(){
   if(!state)return;
   const s=state.settings, market=state.market;
@@ -105,4 +115,5 @@ $('exit-button').onclick=()=>confirmAction('ออกจากโปรแกร
 window.addEventListener('resize',()=>{redraw();if(state)renderMT5();});
 setInterval(()=>{$('clock').textContent=new Date().toLocaleTimeString('en-GB')+' LOCAL';},1000);
 async function poll(){if(stopped)return;try{if(!token){const bootstrap=await fetch('/api/bootstrap',{signal:AbortSignal.timeout(3000)});if(!bootstrap.ok)throw new Error();token=(await bootstrap.json()).token;}const response=await fetch('/api/state',{signal:AbortSignal.timeout(3000)});if(!response.ok)throw new Error();state=await response.json();connected=true;document.body.classList.remove('offline');$('server-status').textContent='ระบบพร้อมใช้งาน';render();}catch{connected=false;document.body.classList.add('offline');$('server-status').textContent='ขาดการเชื่อมต่อ · กำลังลองใหม่';if(state)render();}finally{if(!stopped)setTimeout(poll,500);}}
+setView('tradingview');
 poll();
